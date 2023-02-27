@@ -1,27 +1,34 @@
+#![feature(naked_functions)]
 #![no_main]
 #![no_std]
 
 use core::arch;
 use mocha_std::{
+    env,
     io::{self, Write},
     process,
 };
 
+#[naked]
 #[no_mangle]
 pub unsafe extern "C" fn _start() -> ! {
-    let stack_top: *const u8;
-
     arch::asm!(
-        // mark outer stack frame
+        // clear the frame pointer
+        // marks this as the outer frame
         "xor rbp, rbp",
-        "mov {}, rsp",
-        // align for sse
-        "and rsp, -16",
-        out(reg) stack_top,
-        options(nostack),
-    );
+        // copy rsp to rdi as the first arg for main.
+        "mov rdi, rsp",
+        "call {}",
+        sym main,
+        options(noreturn),
+    )
+}
 
-    let _stack_top = stack_top;
+#[inline(always)]
+unsafe extern "C" fn main(sp: *const isize) -> ! {
+    unsafe {
+        env::init_env(sp);
+    }
 
     let mut stdout = io::stdout();
     let _ = writeln!(&mut stdout, "hello world!");
