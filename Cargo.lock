@@ -3,6 +3,13 @@
 version = 3
 
 [[package]]
+name = "coreutils"
+version = "0.0.0"
+dependencies = [
+ "mocha-std",
+]
+
+[[package]]
 name = "hello-world"
 version = "0.0.0"
 dependencies = [

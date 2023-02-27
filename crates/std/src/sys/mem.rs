@@ -44,3 +44,15 @@ pub unsafe extern "C" fn memcmp(this: *const u8, other: *const u8, len: usize) -
 
     0
 }
+
+#[inline(never)]
+#[no_mangle]
+pub unsafe extern "C" fn strlen(this: *const u8) -> usize {
+    let mut end = this;
+
+    while *end != 0 {
+        end = end.add(1);
+    }
+
+    end.sub_ptr(this)
+}
