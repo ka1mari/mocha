@@ -40,7 +40,13 @@ macro_rules! stdio_writers {
     ($(#[doc = $doc:literal] $method:ident -> $struct:ident: $file:expr;)*) => {$(
         #[doc = concat!("A handle to ", $doc, ".")]
         pub struct $struct {
-            pub(crate) inner: BufWriter<File, 512>,
+            pub(crate) inner: BufWriter<File, 1024>,
+        }
+
+        impl $struct {
+            pub fn file_mut(&mut self) -> &mut File {
+                &mut self.inner.inner
+            }
         }
 
         impl Write for $struct {

@@ -1,13 +1,37 @@
+#![feature(maybe_uninit_slice)]
+#![feature(maybe_uninit_uninit_array_transpose)]
+#![feature(maybe_uninit_write_slice)]
 #![feature(naked_functions)]
 #![no_main]
 #![no_std]
 
+use crate::yes::Yes;
 use core::arch;
 use mocha_std::{
     env,
     io::{self, Write},
     process,
 };
+
+mod yes;
+
+#[derive(Debug)]
+pub enum Command {
+    Help,
+    Yes,
+}
+
+impl Command {
+    pub fn from_arg(arg: &str) -> Option<Self> {
+        let command = match arg {
+            "help" => Command::Help,
+            "yes" => Command::Yes,
+            _ => return None,
+        };
+
+        Some(command)
+    }
+}
 
 #[naked]
 #[no_mangle]
@@ -22,25 +46,6 @@ pub unsafe extern "C" fn _start() -> ! {
         sym main,
         options(noreturn),
     )
-}
-
-#[derive(Debug)]
-pub enum Command {
-    Help,
-    Yes,
-}
-
-impl Command {
-    pub fn from_arg(arg: &str) -> Option<Self> {
-        let command = match arg {
-            "mocha-utils" => Command::Help,
-            "help" => Command::Help,
-            "yes" => Command::Yes,
-            _ => return None,
-        };
-
-        Some(command)
-    }
 }
 
 fn help() -> ! {
@@ -72,16 +77,25 @@ unsafe extern "C" fn main(sp: *const isize) -> ! {
         help();
     };
 
-    let mut stdout = io::stdout();
-
     match command {
         Command::Help => help(),
-        Command::Yes => loop {
-            let _ = writeln!(&mut stdout, "y");
-        },
+        Command::Yes => {
+            let mut stdout = io::stdout();
+
+            // bypass buffering of stdout, we're doing a better job
+            let stdout = stdout.file_mut();
+
+            // yes
+            let mut yes = Yes::new();
+
+            // \n is appended to the end of the pattern
+            let pattern = args.next().unwrap_or("y");
+
+            yes.set_pattern(pattern);
+
+            loop {
+                let _ = stdout.write(yes.as_bytes());
+            }
+        }
     }
-
-    let _ = stdout.flush();
-
-    process::exit(0)
 }

@@ -1,11 +1,11 @@
 [profile.release]
 codegen-units = 1
 lto = "fat"
-#strip = "symbols"
+strip = "symbols"
 
 [workspace]
 members = [
-    "crates/coreutils",
     "crates/hello-world",
     "crates/std",
+    "crates/utils",
 ]
