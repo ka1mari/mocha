@@ -5,6 +5,8 @@
 
 use core::arch;
 
+mod mem;
+
 #[repr(usize)]
 enum Id {
     Write = 1,
@@ -28,8 +30,6 @@ impl Error {
     }
 }
 
-#[inline(never)]
-#[no_mangle]
 pub(crate) unsafe fn write(file: u32, bytes: &[u8]) -> Result<usize, Error> {
     let result: usize;
 
@@ -47,51 +47,11 @@ pub(crate) unsafe fn write(file: u32, bytes: &[u8]) -> Result<usize, Error> {
     Error::map_result(result)
 }
 
-use core::intrinsics;
-
-#[inline(never)]
-#[no_mangle]
-pub unsafe extern "C" fn memcpy(destination: *mut u8, source: *mut u8, len: isize) -> *mut u8 {
-    let mut i = 0;
-
-    while i < len {
-        *(intrinsics::offset(destination, i) as *mut u8) = *intrinsics::offset(source, i);
-
-        i += 1;
-    }
-
-    destination
-}
-
-#[inline(never)]
-#[no_mangle]
-pub unsafe extern "C" fn memset(destination: *mut u8, value: i32, len: isize) -> *mut u8 {
-    let mut i = 0;
-
-    while i < len {
-        *(intrinsics::offset(destination, i) as *mut u8) = value as u8;
-
-        i += 1;
-    }
-
-    destination
-}
-
-#[inline(never)]
-#[no_mangle]
-pub unsafe extern "C" fn memcmp(this: *const u8, other: *const u8, len: isize) -> i32 {
-    let mut i = 0;
-
-    while i < len {
-        let a = *intrinsics::offset(this, i);
-        let b = *intrinsics::offset(other, i);
-
-        if a != b {
-            return a as i32 - b as i32;
-        }
-
-        i += 1;
-    }
-
-    0
+pub(crate) unsafe fn exit(code: i32) -> ! {
+    arch::asm!(
+        "syscall",
+        in("rax") 231_usize,
+        in("rdi") code,
+        options(noreturn, nostack),
+    )
 }

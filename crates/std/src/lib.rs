@@ -1,4 +1,3 @@
-#![feature(core_intrinsics)]
 #![feature(format_args_nl)]
 #![feature(maybe_uninit_slice)]
 #![feature(maybe_uninit_uninit_array_transpose)]
