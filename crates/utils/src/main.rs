@@ -19,6 +19,7 @@ mod yes;
 #[derive(Debug)]
 pub enum Command {
     Echo,
+    Env,
     Help,
     Yes,
 }
@@ -27,6 +28,7 @@ impl Command {
     pub fn from_arg(arg: &str) -> Option<Self> {
         let command = match arg {
             "echo" => Command::Echo,
+            "env" => Command::Env,
             "help" => Command::Help,
             "yes" => Command::Yes,
             _ => return None,
@@ -58,12 +60,16 @@ fn help() -> ! {
     let _ = writeln!(&mut stdout, "commands:");
     let _ = writeln!(
         &mut stdout,
-        "  echo  repeats the given argument(s) to stdout."
+        "  echo  repeats the given argument(s) to stdout",
     );
+
+    let _ = writeln!(&mut stdout, "  env  display the current environment",);
+
     let _ = writeln!(
         &mut stdout,
-        "  yes  spam stdout with \"y\" or the given argument."
+        "  yes  spam stdout with \"y\" or the given argument",
     );
+
     let _ = writeln!(&mut stdout);
     let _ = stdout.flush();
 
@@ -100,6 +106,17 @@ unsafe extern "C" fn main(sp: *const isize) -> ! {
             }
 
             let _ = stdout.write(b"\n");
+            let _ = stdout.flush();
+
+            process::exit(0)
+        }
+        Command::Env => {
+            let mut stdout = io::stdout();
+
+            for (key, val) in env::vars() {
+                let _ = writeln!(&mut stdout, "{key}={val}");
+            }
+
             let _ = stdout.flush();
 
             process::exit(0)
