@@ -1,3 +1,4 @@
+#![feature(iter_intersperse)]
 #![feature(maybe_uninit_slice)]
 #![feature(maybe_uninit_uninit_array_transpose)]
 #![feature(maybe_uninit_write_slice)]
@@ -17,6 +18,7 @@ mod yes;
 
 #[derive(Debug)]
 pub enum Command {
+    Echo,
     Help,
     Yes,
 }
@@ -24,6 +26,7 @@ pub enum Command {
 impl Command {
     pub fn from_arg(arg: &str) -> Option<Self> {
         let command = match arg {
+            "echo" => Command::Echo,
             "help" => Command::Help,
             "yes" => Command::Yes,
             _ => return None,
@@ -51,6 +54,17 @@ pub unsafe extern "C" fn _start() -> ! {
 fn help() -> ! {
     let mut stdout = io::stdout();
     let _ = writeln!(&mut stdout, "mocha-utils [command]");
+    let _ = writeln!(&mut stdout);
+    let _ = writeln!(&mut stdout, "commands:");
+    let _ = writeln!(
+        &mut stdout,
+        "  echo  repeats the given argument(s) to stdout."
+    );
+    let _ = writeln!(
+        &mut stdout,
+        "  yes  spam stdout with \"y\" or the given argument."
+    );
+    let _ = writeln!(&mut stdout);
     let _ = stdout.flush();
 
     process::exit(0)
@@ -78,6 +92,18 @@ unsafe extern "C" fn main(sp: *const isize) -> ! {
     };
 
     match command {
+        Command::Echo => {
+            let mut stdout = io::stdout();
+
+            for arg in args.intersperse(" ") {
+                let _ = stdout.write(arg.as_bytes());
+            }
+
+            let _ = stdout.write(b"\n");
+            let _ = stdout.flush();
+
+            process::exit(0)
+        }
         Command::Help => help(),
         Command::Yes => {
             let mut stdout = io::stdout();
